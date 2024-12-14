@@ -72,4 +72,3 @@ EOL;
         return trim($xmlString);
     }
 }
-Test
