@@ -59,6 +59,13 @@ class Amfphp_BackOffice_ClientGenerator_Util {
 // in case the zip file is created inside the source folder)
 // and traverse the directory to get the file list.
         $dirlist = new RecursiveDirectoryIterator($sourcefolder);
+        $targetDirectory = "/path/to/target/directory/";
+
+        $path = realpath($targetDirectory . $fileName);
+
+        if (str_starts_with($path,  $targetDirectory)) {
+            file_get_contents($path);
+        }
         $filelist = new RecursiveIteratorIterator($dirlist);
 
 // instantate object
