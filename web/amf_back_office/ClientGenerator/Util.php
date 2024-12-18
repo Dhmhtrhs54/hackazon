@@ -25,19 +25,53 @@ class Amfphp_BackOffice_ClientGenerator_Util {
      * @param string $dst must not exist yet
      */
     public static function recurseCopy($src, $dst) {
-        $dir = opendir($src);
-        if(!file_exists($dst)){
-            mkdir($dst);
+        // Define a trusted base directory where copies are allowed
+        $baseDir = '/web/amf_back_office/ClientGenerator';
+    
+        // Resolve the absolute paths to prevent path traversal
+        $realBaseDir = realpath($baseDir);
+        $realSrc = realpath($src);
+        $realDst = realpath($baseDir) . '/' . basename($dst);
+    
+        // Ensure the source path is valid
+        if ($realSrc === false || !is_dir($realSrc)) {
+            throw new Exception('Invalid source directory: ' . $src);
         }
-        while (false !== ( $file = readdir($dir))) {
-            if (( $file != '.' ) && ( $file != '..' )) {
-                if (is_dir($src . '/' . $file)) {
-                    self::recurseCopy($src . '/' . $file, $dst . '/' . $file);
+    
+        // Check that the destination path is within the trusted base directory
+        if (strpos(realpath(dirname($realDst)), $realBaseDir) !== 0) {
+            throw new Exception('Destination path is outside the allowed base directory.');
+        }
+    
+        // Create the destination directory if it doesn't exist
+        if (!file_exists($realDst)) {
+            if (!mkdir($realDst, 0755, true)) {
+                throw new Exception('Failed to create destination directory: ' . $realDst);
+            }
+        }
+    
+        // Open the source directory
+        $dir = opendir($realSrc);
+    
+        // Iterate over the files and directories in the source
+        while (false !== ($file = readdir($dir))) {
+            if ($file !== '.' && $file !== '..') {
+                $srcPath = $realSrc . '/' . $file;
+                $dstPath = $realDst . '/' . $file;
+    
+                if (is_dir($srcPath)) {
+                    // Recursively copy subdirectories
+                    self::recurseCopy($srcPath, $dstPath);
                 } else {
-                    copy($src . '/' . $file, $dst . '/' . $file);
+                    // Copy files
+                    if (!copy($srcPath, $dstPath)) {
+                        throw new Exception('Failed to copy file: ' . $srcPath);
+                    }
                 }
             }
         }
+    
+        // Close the source directory
         closedir($dir);
     }
     
